@@ -114,7 +114,7 @@ st.set_page_config(page_title="Numerical ODEs Applet", layout="wide")
 st.title("Interactive Numerical Methods for ODEs & BVPs")
 st.markdown("*By Dr Nouralden Mohammed*")
 
-tab1, tab2, tab3 = st.tabs(["1st Order ODEs", "Systems (2nd Order)", "Boundary Value Problems"])
+tab1, tab2, tab3, tab4 = st.tabs(["1st Order ODEs", "Systems of ODEs (2 Vars)", "Boundary Value Problems", "SIR Epidemic Model"])
 
 # --- TAB 1: 1st ORDER ODEs ---
 with tab1:
@@ -179,8 +179,8 @@ with tab1:
 
 # --- TAB 2: SYSTEMS OF ODEs ---
 with tab2:
-    st.header("Customizable System of 2 ODEs")
-    st.markdown("Define a system: $u' = f_u(t, u, v)$ and $v' = f_v(t, u, v)$")
+    st.header("Customizable System of ODEs (2 Variables)")
+    st.markdown("Define any 2-variable system: $u' = f_u(t, u, v)$ and $v' = f_v(t, u, v)$")
     
     col3, col4 = st.columns([1, 3])
     with col3:
@@ -287,3 +287,50 @@ with tab3:
             st.pyplot(fig3)
         except Exception as e:
             st.error(f"Error evaluating mathematical expression: {e}")
+
+# --- TAB 4: SIR EPIDEMIC MODEL ---
+with tab4:
+    st.header("The SIR Epidemic Model")
+    st.markdown("Model the spread of a disease: $S' = -\\beta S I$, $\\quad I' = \\beta S I - \\gamma I$, $\\quad R' = \\gamma I$")
+    
+    col7, col8 = st.columns([1, 3])
+    with col7:
+        st.markdown("**Epidemic Parameters:**")
+        beta_sir = st.slider("Infection Rate ($\\beta$)", 0.0, 1.0, 0.3, 0.01)
+        gamma_sir = st.slider("Recovery Rate ($\\gamma$)", 0.0, 1.0, 0.1, 0.01)
+        
+        st.markdown("**Initial Conditions & Time:**")
+        c7, c8 = st.columns(2)
+        with c7:
+            S0_sir = st.number_input("Initial S", value=0.99)
+            I0_sir = st.number_input("Initial I", value=0.01)
+            R0_sir = st.number_input("Initial R", value=0.00)
+        with c8:
+            tf_sir = st.number_input("Days (tf)", value=100.0)
+            n_sir = st.slider("Steps (n)", 10, 1000, 100)
+        
+        sir_method = st.selectbox(
+            "Select Numerical Method:",
+            ["Euler", "RK2 (Modified Euler)", "Midpoint", "RK4"],
+            index=3
+        )
+        
+    with col8:
+        def f_sir(t, y_vec):
+            S, I, R = y_vec
+            return np.array([-beta_sir * S * I, beta_sir * S * I - gamma_sir * I, gamma_sir * I])
+            
+        y0_sir = np.array([S0_sir, I0_sir, R0_sir])
+        method_dict = {"Euler": euler_method, "RK2 (Modified Euler)": rk2_method, "Midpoint": midpoint_method, "RK4": rk4_method}
+        t_sir, y_sir = method_dict[sir_method](f_sir, 0, tf_sir, n_sir, y0_sir)
+            
+        fig4, ax4 = plt.subplots(figsize=(8, 4))
+        ax4.plot(t_sir, y_sir[:, 0], 'b-', label='Susceptible (S)', linewidth=2)
+        ax4.plot(t_sir, y_sir[:, 1], 'r-', label='Infected (I)', linewidth=2)
+        ax4.plot(t_sir, y_sir[:, 2], 'g-', label='Recovered (R)', linewidth=2)
+        
+        ax4.set_xlabel('Days (t)')
+        ax4.set_ylabel('Proportion of Population')
+        ax4.legend()
+        ax4.grid(True)
+        st.pyplot(fig4)
